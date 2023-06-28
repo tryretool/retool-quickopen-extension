@@ -1,0 +1,22 @@
+{
+  "manifest_version": 3,
+  "name": "Retool Quick Open Extension",
+  "description": "Quickly open Retool links in an already open tab",
+  "version": "1.0",
+  "action": {
+    "default_popup": "hello.html",
+    "default_icon": "hi.png"
+  },
+  "background": {
+    "service_worker": "service-worker.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["http://*/*", "https://*/*"],
+      "js": ["content-script.js"],
+      "all_frames": true
+    }
+  ],
+  "permissions": ["tabGroups", "tabs", "declarativeNetRequestWithHostAccess"],
+  "host_permissions": ["<all_urls>"]
+}

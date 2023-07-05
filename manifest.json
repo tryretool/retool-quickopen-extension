@@ -5,7 +5,12 @@
   "version": "1.0",
   "action": {
     "default_popup": "popup.html",
-    "default_icon": "retool-logo.png"
+    "default_icon": "icons/retool-logo.png"
+  },
+  "icons": {
+    "16": "icons/retool-logo-16.png",
+    "48": "icons/retool-logo-48.png",
+    "128": "icons/retool-logo-128.png"
   },
   "background": {
     "service_worker": "service-worker.js"

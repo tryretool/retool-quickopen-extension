@@ -5,7 +5,7 @@
 
 // https://developer.chrome.com/docs/extensions/mv3/messaging/#connect
 // Establish a port with the service worker.
-const port = chrome.runtime.connect({ name: "main-background-channel" });
+let port = chrome.runtime.connect({ name: "main-background-channel" });
 
 // Ask the service worker for a list of open Retool tabs, to decide if the DOM should be modified.
 // A service worker is needed because content scripts cannot query what tabs are open.
@@ -13,14 +13,14 @@ const port = chrome.runtime.connect({ name: "main-background-channel" });
 // setTimeout is needed to give the website time to load, so that the DOM can be modified when this query returns.
 setTimeout(() => {
   port.postMessage({ queryOpenRetoolTabs: true });
-}, 3000);
+}, 5000);
 
-// TODO: This port shuts down after a while, figure out how to keep it alive.
 port.onMessage.addListener(function (msg) {
   if (msg.openRetoolTabs) {
     const openTabs = JSON.parse(msg.openRetoolTabs);
-    const retoolLinks = document.querySelectorAll("a[href*='retool']");
 
+    // If you wish to customize the selector for links to Retool apps, you can do so here.
+    const retoolLinks = document.querySelectorAll("a[href*='retool']");
     retoolLinks.forEach((link) => {
       const retoolUrl = new URL(link.href);
       const retoolTab = openTabs.find((tab) => {
@@ -31,13 +31,24 @@ port.onMessage.addListener(function (msg) {
         );
       });
       if (retoolTab) {
-        console.log("Retool quickopen extension modifying a link");
+        console.log("Retool Quickopen extension modifying a link:");
         console.log(link);
         link.addEventListener("click", (e) => {
           e.preventDefault();
+          if (!port) {
+            console.log("Retool Quickopen extension re-opening a port.");
+            port = chrome.runtime.connect({ name: "main-background-channel" });
+          }
+
+          // If you wish to customize navigaton URL, you can do so here.
           port.postMessage({ navigateToTab: retoolTab.id, url: link.href });
         });
       }
     });
   }
+});
+
+port.onDisconnect.addListener(function () {
+  console.log("Retool Quickopen extension port disconnected.");
+  port = null;
 });

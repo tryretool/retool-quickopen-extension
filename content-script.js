@@ -12,6 +12,7 @@ let port = chrome.runtime.connect({ name: "main-background-channel" });
 // https://developer.chrome.com/docs/extensions/reference/tabs/#overview
 // setTimeout is needed to give the website time to load, so that the DOM can be modified when this query returns.
 setTimeout(() => {
+  ensurePortOpen();
   port.postMessage({ queryOpenRetoolTabs: true });
 }, 5000);
 
@@ -35,10 +36,7 @@ port.onMessage.addListener(function (msg) {
         console.log(link);
         link.addEventListener("click", (e) => {
           e.preventDefault();
-          if (!port) {
-            console.log("Retool Quickopen extension re-opening a port.");
-            port = chrome.runtime.connect({ name: "main-background-channel" });
-          }
+          ensurePortOpen();
 
           // If you wish to customize navigaton URL, you can do so here.
           port.postMessage({ navigateToTab: retoolTab.id, url: link.href });
@@ -52,3 +50,10 @@ port.onDisconnect.addListener(function () {
   console.log("Retool Quickopen extension port disconnected.");
   port = null;
 });
+
+function ensurePortOpen() {
+  if (!port) {
+    console.log("Retool Quickopen extension re-opening a port.");
+    port = chrome.runtime.connect({ name: "main-background-channel" });
+  }
+}

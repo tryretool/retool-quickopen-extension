@@ -1,5 +1,7 @@
 # Retool Quickopen Extension
 
+![Image depicting a user clicking a zendesk link and a Retool tab opening](https://i.ibb.co/bbHf6KR/Screenshot-2023-07-07-at-10-44-04-AM.png)
+
 A Chrome extension to enable tab re-use of Retool. Inspired by a [similar extension](https://chrome.google.com/webstore/detail/zendesk-quicktab/moiloihigegdbekeabannnkibekfnekf) for Zendesk.
 
 This extension is very basic and easy to customize for your use case:

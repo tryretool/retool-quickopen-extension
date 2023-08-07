@@ -11,7 +11,7 @@ This extension is very basic and easy to customize for your use case:
 
 ## Install from Chrome Web Store
 
-This extension is still pending Google approval. A link will be shared here once approved.
+https://chrome.google.com/webstore/detail/retool-quick-open/ceealkjinhcgoihffmapmhdopljdbmco
 
 ## Install from source
 

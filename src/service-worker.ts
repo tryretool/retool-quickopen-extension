@@ -15,7 +15,7 @@ chrome.runtime.onConnect.addListener(function (port) {
     if (msg.queryOpenRetoolTabs) {
       let tabs = await chrome.tabs.query({ url: "<all_urls>" });
       console.log(tabs);
-      tabs = tabs.filter((tab) => tab.url.includes("retool"));
+      tabs = tabs.filter((tab) => tab.url?.includes("retool"));
       port.postMessage({ openRetoolTabs: JSON.stringify(tabs) });
     }
 

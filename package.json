@@ -1,0 +1,14 @@
+{
+  "name": "retool-quickopen-extension",
+  "version": "1.0.0",
+  "description": "A Chrome extension to enable tab re-use of Retool.",
+  "scripts": {
+    "dev": "tsc --watch -p .",
+    "build": "tsc -p ."
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "@types/chrome": "^0.0.243",
+    "typescript": "^5.1.6"
+  }
+}

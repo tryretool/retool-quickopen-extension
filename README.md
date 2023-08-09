@@ -6,8 +6,8 @@ A Chrome extension to enable tab re-use of Retool. Inspired by a [similar extens
 
 This extension is very basic and easy to customize for your use case:
 
-1. `content-script.js` runs in the context of a web page. It scans the DOM for links to Retool, and modifies their click listener.
-2. `service-worker.js` provides access to `chrome.tabs` APIs. This provides access to metadata on which tabs are open, and handles tab navigation.
+1. `src/content-script.ts` runs in the context of a web page. It scans the DOM for links to Retool, and modifies their click listener.
+2. `src/service-worker.ts` provides access to `chrome.tabs` APIs. This provides access to metadata on which tabs are open, and handles tab navigation.
 
 ## Install from Chrome Web Store
 
@@ -20,5 +20,6 @@ https://chrome.google.com/webstore/detail/retool-quick-open/ceealkjinhcgoihffmap
 
 ## Release Process (For Retool Employees)
 
-1. Zip up everything (except releases folder)
-2. Upload to Chrome Web Store (retoolquickopen@gmail.com credentials in 1password)
+1. `npm run build`
+2. Zip up everything (except releases folder)
+3. Upload to Chrome Web Store (use retoolquickopen@gmail.com credentials in 1password)

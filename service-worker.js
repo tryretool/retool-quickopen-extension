@@ -7,27 +7,40 @@
 chrome.runtime.onConnect.addListener(function (port) {
   console.assert(port.name === "main-background-channel");
 
-  port.onMessage.addListener(function (msg) {
+  port.onMessage.addListener(async function (msg) {
     console.log("Retool Quickopen service worked received a message:");
     console.log(msg);
 
     // Content script is asking for a list of open Retool tabs.
     if (msg.queryOpenRetoolTabs) {
-      chrome.tabs.query({ url: "<all_urls>" }, function (tabs) {
-        console.log(tabs);
-        tabs = tabs.filter((tab) => tab.url.includes("retool"));
-        port.postMessage({ openRetoolTabs: JSON.stringify(tabs) });
-      });
+      let tabs = await chrome.tabs.query({ url: "<all_urls>" });
+      console.log(tabs);
+      tabs = tabs.filter((tab) => tab.url.includes("retool"));
+      port.postMessage({ openRetoolTabs: JSON.stringify(tabs) });
     }
 
     // Content script is asking to navigate to a different tab.
+    // Verify the tab still exists.
     if (msg.navigateToTab) {
-      chrome.tabs.update(parseInt(msg.navigateToTab), {
-        url: msg.url,
-      });
-      chrome.tabs.update(parseInt(msg.navigateToTab), {
-        active: true,
-      });
+      let tab;
+      try {
+        tab = await chrome.tabs.get(parseInt(msg.navigateToTab));
+      } catch (e) {
+        console.log(e);
+      }
+
+      if (tab) {
+        // Tab exists, navigate to it.
+        chrome.tabs.update(parseInt(msg.navigateToTab), {
+          url: msg.url,
+        });
+        chrome.tabs.update(parseInt(msg.navigateToTab), {
+          active: true,
+        });
+      } else {
+        // Tab does not exist, create it.
+        chrome.tabs.create({ url: msg.url });
+      }
     }
   });
 });

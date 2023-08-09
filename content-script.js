@@ -50,7 +50,7 @@ port.onMessage.addListener(function (msg) {
         console.log(button);
         button.addEventListener("click", (e) => {
           ensurePortOpen();
-          port.postMessage({ navigateToTab: tabId, url });
+          port.postMessage({ navigateToTab: retoolTab.id, url: buttonURL });
         });
         button.removeAttribute("data-action-url");
       }

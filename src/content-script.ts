@@ -8,17 +8,25 @@
 let port = chrome.runtime.connect({ name: "main-background-channel" });
 let portOpen = true;
 
+// These are messages that service worker can send to content script.
+type UpdateDOMWithOpenRetoolTabs = {
+  type: "UPDATE_DOM_WITH_OPEN_RETOOL_TABS";
+  openRetoolTabs: string;
+};
+
 // Ask the service worker for a list of open Retool tabs, to decide if the DOM should be modified.
 // A service worker is needed because content scripts cannot access chrome.tabs API.
 // https://developer.chrome.com/docs/extensions/reference/tabs/#overview
 // setTimeout is needed to give the website time to load, so that the DOM can be modified when this query returns.
 setTimeout(() => {
   ensurePortOpen();
-  port.postMessage({ queryOpenRetoolTabs: true });
+  port.postMessage({
+    type: "GET_OPEN_RETOOL_TABS",
+  });
 }, 5000);
 
-port.onMessage.addListener(function (msg) {
-  if (msg.openRetoolTabs) {
+port.onMessage.addListener(function (msg: UpdateDOMWithOpenRetoolTabs) {
+  if (msg.type === "UPDATE_DOM_WITH_OPEN_RETOOL_TABS") {
     const openTabs = JSON.parse(msg.openRetoolTabs);
 
     // Support for <a href="*retool*"> links.
@@ -33,8 +41,13 @@ port.onMessage.addListener(function (msg) {
           e.preventDefault();
           ensurePortOpen();
 
-          //@ts-ignore b/c we know link.href is defined.
-          port.postMessage({ navigateToTab: retoolTab.id, url: link.href });
+          const payload: NavigateToTab = {
+            type: "NAVIGATE_TO_TAB",
+            tabId: retoolTab.id!,
+            //@ts-ignore
+            url: link.href,
+          };
+          port.postMessage(payload);
         });
       }
     });
@@ -52,7 +65,12 @@ port.onMessage.addListener(function (msg) {
         console.log(button);
         button.addEventListener("click", (e) => {
           ensurePortOpen();
-          port.postMessage({ navigateToTab: retoolTab.id, url: buttonURL });
+          const payload: NavigateToTab = {
+            type: "NAVIGATE_TO_TAB",
+            tabId: retoolTab.id!,
+            url: buttonURL,
+          };
+          port.postMessage(payload);
         });
         button.removeAttribute("data-action-url");
       }

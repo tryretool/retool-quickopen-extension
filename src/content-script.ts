@@ -5,6 +5,8 @@
 
 // https://developer.chrome.com/docs/extensions/mv3/messaging/#connect
 // Establish a port with the service worker.
+// A service worker is needed because content scripts cannot access chrome.tabs API.
+// https://developer.chrome.com/docs/extensions/reference/tabs/#overview
 let port = chrome.runtime.connect({ name: "main-background-channel" });
 let portOpen = true;
 
@@ -15,64 +17,59 @@ type UpdateDOMWithOpenRetoolTabs = {
 };
 
 // Ask the service worker for a list of open Retool tabs, to decide if the DOM should be modified.
-// A service worker is needed because content scripts cannot access chrome.tabs API.
-// https://developer.chrome.com/docs/extensions/reference/tabs/#overview
-// setTimeout is needed to give the website time to load, so that the DOM can be modified when this query returns.
-setTimeout(() => {
-  ensurePortOpen();
-  port.postMessage({
-    type: "GET_OPEN_RETOOL_TABS",
-  });
+setInterval(() => {
+  if (DOMContainsRetoolLink()) {
+    ensurePortOpen();
+    port.postMessage({
+      type: "GET_OPEN_RETOOL_TABS",
+    });
+  }
 }, 5000);
+
+// Used as a cache key to avoid unnecessary DOM modifications.
+let openRetoolTabsIDSum: number = 0;
 
 port.onMessage.addListener(function (msg: UpdateDOMWithOpenRetoolTabs) {
   if (msg.type === "UPDATE_DOM_WITH_OPEN_RETOOL_TABS") {
-    const openTabs = JSON.parse(msg.openRetoolTabs);
+    const openTabs: chrome.tabs.Tab[] = JSON.parse(msg.openRetoolTabs);
 
-    // Support for <a href="*retool*"> links.
+    // If the list of open Retool tabs hasn't changed, don't do anything.
+    const openTabsIDSum = openTabs.reduce((acc, tab) => acc + tab.id!, 0);
+    if (openRetoolTabsIDSum === openTabsIDSum) {
+      return;
+    }
+    openRetoolTabsIDSum = openTabsIDSum;
+
+    // Modify <a href="*retool*"> links.
     const retoolLinks = document.querySelectorAll("a[href*='retool']");
     retoolLinks.forEach((link) => {
       //@ts-ignore b/c we know link.href is defined.
       const retoolTab = firstRetoolTabMatchingURL(openTabs, new URL(link.href));
       if (retoolTab) {
-        console.log("Retool Quickopen extension modifying a link:");
-        console.log(link);
-        link.addEventListener("click", (e) => {
-          e.preventDefault();
-          ensurePortOpen();
-
-          const payload: NavigateToTab = {
-            type: "NAVIGATE_TO_TAB",
-            tabId: retoolTab.id!,
-            //@ts-ignore
-            url: link.href,
-          };
-          port.postMessage(payload);
-        });
+        //@ts-ignore
+        interceptElementNavigation(link, retoolTab.id!, link.href);
       }
     });
 
-    // Support for <button data-action-url="*retool*"> buttons.
+    // Modify <button data-action-url="*retool*"> buttons.
     // This is what Intercom buttons look like.
-    const retoolButtons = document.querySelectorAll(
-      "button[data-action-url*='retool']"
-    );
+    const retoolButtons = [
+      ...document.querySelectorAll("button[data-action-url*='retool']"),
+      ...document.querySelectorAll("button[hidden-url*='retool']"),
+    ];
     retoolButtons.forEach((button) => {
-      const buttonURL = button.getAttribute("data-action-url")!; // ! is safe because we filtered for buttons with data-action-url.
-      const retoolTab = firstRetoolTabMatchingURL(openTabs, new URL(buttonURL));
+      const buttonURL =
+        button.getAttribute("data-action-url") ||
+        button.getAttribute("hidden-url");
+      const retoolTab = firstRetoolTabMatchingURL(
+        openTabs,
+        new URL(buttonURL!)
+      );
       if (retoolTab) {
-        console.log("Retool Quickopen extension modifying a button:");
-        console.log(button);
-        button.addEventListener("click", (e) => {
-          ensurePortOpen();
-          const payload: NavigateToTab = {
-            type: "NAVIGATE_TO_TAB",
-            tabId: retoolTab.id!,
-            url: buttonURL,
-          };
-          port.postMessage(payload);
-        });
+        // Button cleanup
         button.removeAttribute("data-action-url");
+        button.setAttribute("hidden-url", buttonURL!);
+        interceptElementNavigation(button, retoolTab.id!, buttonURL!);
       }
     });
   }
@@ -96,4 +93,40 @@ function firstRetoolTabMatchingURL(openTabs: chrome.tabs.Tab[], url: URL) {
     const tabUrl = new URL(tab.url ? tab.url : "");
     return tabUrl.hostname === url.hostname && tabUrl.pathname === url.pathname;
   });
+}
+
+function interceptElementNavigation(
+  element: Element,
+  tabId: number,
+  url: string
+) {
+  console.log("Retool Quickopen extension modifying an element:");
+  console.log(element);
+
+  // Remove old event listeners.
+  const newElement = element.cloneNode(true);
+  element.parentNode!.replaceChild(newElement, element);
+
+  // Add new event listener.
+  newElement.addEventListener("click", (e) => {
+    e.preventDefault();
+    ensurePortOpen();
+
+    const payload: NavigateToTab = {
+      type: "NAVIGATE_TO_TAB",
+      tabId: tabId,
+      url,
+    };
+    port.postMessage(payload);
+  });
+}
+
+function DOMContainsRetoolLink(): boolean {
+  return (
+    [
+      ...document.querySelectorAll("a[href*='retool']"),
+      ...document.querySelectorAll("button[data-action-url*='retool']"),
+      ...document.querySelectorAll("button[hidden-url*='retool']"),
+    ].length > 0
+  );
 }

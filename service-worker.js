@@ -13,7 +13,8 @@ chrome.runtime.onConnect.addListener(function (port) {
 
     // Content script is asking for a list of open Retool tabs.
     if (msg.queryOpenRetoolTabs) {
-      const tabs = chrome.tabs.query({ url: "<all_urls>" }, function (tabs) {
+      chrome.tabs.query({ url: "<all_urls>" }, function (tabs) {
+        console.log(tabs);
         tabs = tabs.filter((tab) => tab.url.includes("retool"));
         port.postMessage({ openRetoolTabs: JSON.stringify(tabs) });
       });

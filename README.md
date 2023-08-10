@@ -21,5 +21,5 @@ https://chrome.google.com/webstore/detail/retool-quick-open/ceealkjinhcgoihffmap
 ## Release Process (For Retool Employees)
 
 1. `npm run build`
-2. Zip up everything (except releases folder)
+2. Zip up dist/, icons/, manifest.json, popup.html, README.md
 3. Upload to Chrome Web Store (use retoolquickopen@gmail.com credentials in 1password)

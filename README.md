@@ -16,7 +16,9 @@ https://chrome.google.com/webstore/detail/retool-quick-open/ceealkjinhcgoihffmap
 ## Install from source
 
 1. `git clone https://github.com/tryretool/retool-quickopen-extension.git`
-2. https://developer.chrome.com/docs/extensions/mv3/getstarted/development-basics/#load-unpacked
+2. `cd retool-quickopen-extension`
+3. `npm i && npm build`
+4. https://developer.chrome.com/docs/extensions/mv3/getstarted/development-basics/#load-unpacked
 
 ## Release Process (For Retool Employees)
 
